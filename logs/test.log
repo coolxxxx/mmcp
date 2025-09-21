@@ -1,0 +1,2 @@
+2025-09-15 22:08:50 - __main__ - INFO - 这是一个测试日志消息
+2025-09-15 22:08:50 - src.core.file_manager - INFO - 创建任务目录: test_downloads\test_task_1
