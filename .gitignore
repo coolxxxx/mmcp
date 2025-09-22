@@ -1,5 +1,14 @@
 # Ignore entire downloads directory
 downloads/
+
+# Python build caches
+__pycache__/
+*.pyc
+
+# Tooling caches
+.codebuddy/
+htmlcov/
+reports/
 downloads/LEGBABY4118/\[LEGBABY美腿宝贝]No.B003_嫩模乔柯涵肉丝裤袜无内撩人浑圆美乳诱惑写真75P_极品性感美女.txt
 downloads/LEGBABY4118/\[LEGBABY美腿宝贝]Vol.027_嫩模潇潇黑色蕾丝内衣性感兔女郎肉丝美腿诱惑写真64P_极品性感美女.txt
 downloads/LEGBABY4118/\[LEGBABY美腿宝贝]Vol.028_嫩模潇潇单板女神极品亮丝美腿无内诱惑写真51P_极品性感美女.txt
