@@ -13,7 +13,7 @@ from ..core.scheduler import TaskScheduler
 from ..models.data_models import TaskStatus, DownloadStatus
 from .task_dialog import TaskDialog
 from .batch_task_dialog import BatchTaskDialog
-from .progress_window import ProgressWindow
+from .realtime_progress_window import RealTimeProgressWindow
 from .settings_dialog import SettingsDialog
 
 class MainWindow:
@@ -452,12 +452,14 @@ class MainWindow:
         
         if task:
             if task_id not in self.progress_windows:
-                self.progress_windows[task_id] = ProgressWindow(self.root, task, self.scheduler)
+                # 使用可工作的进度窗口
+                self.progress_windows[task_id] = RealTimeProgressWindow(self.root, task, self.scheduler)
             else:
                 try:
                     self.progress_windows[task_id].window.lift()
                 except:
-                    self.progress_windows[task_id] = ProgressWindow(self.root, task, self.scheduler)
+                    # 如果窗口已关闭，创建新的进度窗口
+                    self.progress_windows[task_id] = RealTimeProgressWindow(self.root, task, self.scheduler)
     
     def open_settings(self):
         """打开设置"""

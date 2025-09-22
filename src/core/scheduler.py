@@ -18,7 +18,7 @@ import fnmatch
 from dataclasses import dataclass, field
 
 from .parser import WebPageParser
-from .downloader import DownloadManager
+from .enhanced_downloader import EnhancedDownloadManager
 from .file_manager import FileManager
 from ..models.data_models import DownloadTask, TaskStatus, PageInfo, ImageInfo
 from ..core.config import Config
@@ -53,7 +53,7 @@ class TaskScheduler:
         # 获取配置值
         download_path = config.get('download_path', './downloads')
         self.file_manager = FileManager(download_path)
-        self.download_manager = DownloadManager(config.get_all(), self.file_manager)
+        self.download_manager = EnhancedDownloadManager(config.get_all(), self.file_manager)
         
         # 任务管理
         self.tasks: Dict[str, DownloadTask] = {}
@@ -471,7 +471,34 @@ class TaskScheduler:
                 
                 if filtered_images:
                     # 开始下载
-                    self.download_manager.start_download_batch(filtered_images)
+                    # 任务内去重（按文件名优先、URL兜底）
+                    def _dedupe_images(images: List[ImageInfo]) -> List[ImageInfo]:
+                        seen_names = set()
+                        seen_urls = set()
+                        result: List[ImageInfo] = []
+                        for img in images:
+                            name = getattr(img, 'filename', None)
+                            url = getattr(img, 'url', None)
+                            key_name = name.lower() if isinstance(name, str) else None
+                            key_url = url
+                            if key_name:
+                                if key_name in seen_names:
+                                    continue
+                                seen_names.add(key_name)
+                                result.append(img)
+                            elif key_url:
+                                if key_url in seen_urls:
+                                    continue
+                                seen_urls.add(key_url)
+                                result.append(img)
+                            else:
+                                result.append(img)
+                        return result
+
+                    deduped_images = _dedupe_images(filtered_images)
+                    if len(deduped_images) != len(filtered_images):
+                        self.logger.info(f"任务内去重: {len(filtered_images)} -> {len(deduped_images)}")
+                    self.download_manager.start_download_batch(deduped_images)
                     self.logger.info("下载任务已提交给下载管理器")
                     
                     # 等待下载完成

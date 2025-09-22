@@ -1,0 +1,30 @@
+{
+  "max_threads": 6,
+  "timeout": 45,
+  "retry_times": 4,
+  "chunk_size": 8192,
+  "base_rate": 3,
+  "max_rate": 8,
+  "enable_chunked_download": false,
+  "chunk_download_threshold": 10485760,
+  "connection_pool_size": 8,
+  "adaptive_threading": true,
+  "adaptive_interval": 60,
+  "max_threads_limit": 10,
+  "min_threads_limit": 2,
+  "status_update_interval": 0.2,
+  "progress_update_interval": 1.0,
+  "min_retry_delay": 3.0,
+  "max_retry_delay": 60,
+  "server_error_delay": 15,
+  "exponential_backoff": true,
+  "server_error_retry_times": 6,
+  "server_error_cooldown": 30,
+  "request_interval": 0.5,
+  "burst_interval": 2.0,
+  "session": {
+    "verify_ssl": true,
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "proxy": null
+  }
+}
