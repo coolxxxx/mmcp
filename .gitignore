@@ -33,6 +33,11 @@ __pycache__/
 coverage.xml
 htmlcov/
 reports/
+security_scan_results.json
+security_report.json
+test_security_scan/
+test_config.json
+test_download.json
 
 # Runtime logs
 logs/
@@ -41,6 +46,7 @@ logs/
 # Local assistant/tooling state
 .codebuddy/
 .qoder/
+.serena/
 
 # Local environment files
 .env
