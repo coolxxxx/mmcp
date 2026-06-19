@@ -12,6 +12,15 @@ downloads/*
 !downloads/MiStar13023/**
 !downloads/MiStar13355/
 !downloads/MiStar13355/**
+!downloads/Xiuren33864/
+!downloads/Xiuren33864/**
+!downloads/Xiuren32223/
+!downloads/Xiuren32223/**
+!downloads/Xiuren33908/
+!downloads/Xiuren33908/**
+
+# Keep sample folders image-focused; generated metadata text files stay local.
+downloads/**/*.txt
 
 # Python caches and bytecode
 __pycache__/
