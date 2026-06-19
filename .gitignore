@@ -1,5 +1,17 @@
 # Downloaded media/content
-downloads/
+# Keep real downloads local by default, but allow a few small sample folders
+# so the repository demonstrates the expected output structure.
+downloads/*
+!downloads/MiStar14483/
+!downloads/MiStar14483/**
+!downloads/MiStar12006/
+!downloads/MiStar12006/**
+!downloads/MiStar12989/
+!downloads/MiStar12989/**
+!downloads/MiStar13023/
+!downloads/MiStar13023/**
+!downloads/MiStar13355/
+!downloads/MiStar13355/**
 
 # Python caches and bytecode
 __pycache__/
