@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 
 from ..models.data_models import DownloadTask, DownloadStatus, ImageInfo
+from .theme import center_window, style_button, style_window
 
 
 @dataclass
@@ -77,15 +78,16 @@ class RealTimeProgressWindow:
         """创建进度窗口界面"""
         self.window = tk.Toplevel(self.parent)
         self.window.title(f"下载进度 - {self.task.name}")
-        self.window.geometry("800x600")
         self.window.resizable(True, True)
+        style_window(self.window)
         
         # 设置窗口图标和属性
         self.window.transient(self.parent)
         self.window.grab_set()
+        center_window(self.window, self.parent, width=820, height=640)
         
         # 创建主框架
-        main_frame = ttk.Frame(self.window, padding="10")
+        main_frame = ttk.Frame(self.window, padding=16, style="App.TFrame")
         main_frame.grid(row=0, column=0, sticky="wens")
         
         # 配置网格权重
@@ -94,7 +96,7 @@ class RealTimeProgressWindow:
         main_frame.columnconfigure(1, weight=1)
         
         # 任务信息区域
-        info_frame = ttk.LabelFrame(main_frame, text="任务信息", padding="5")
+        info_frame = ttk.LabelFrame(main_frame, text="任务信息", padding=12, style="App.TLabelframe")
         info_frame.grid(row=0, column=0, columnspan=2, sticky="we", pady=(0, 10))
         info_frame.columnconfigure(1, weight=1)
         
@@ -108,7 +110,7 @@ class RealTimeProgressWindow:
         self.url_label.grid(row=1, column=1, sticky="we")
         
         # 总体进度区域
-        progress_frame = ttk.LabelFrame(main_frame, text="总体进度", padding="5")
+        progress_frame = ttk.LabelFrame(main_frame, text="总体进度", padding=12, style="App.TLabelframe")
         progress_frame.grid(row=1, column=0, columnspan=2, sticky="we", pady=(0, 10))
         progress_frame.columnconfigure(1, weight=1)
         
@@ -119,7 +121,7 @@ class RealTimeProgressWindow:
         self.file_progress_label.grid(row=0, column=1, sticky="we")
         
         # 文件进度条
-        self.file_progress_bar = ttk.Progressbar(progress_frame, mode='determinate')
+        self.file_progress_bar = ttk.Progressbar(progress_frame, mode='determinate', style="App.Horizontal.TProgressbar")
         self.file_progress_bar.grid(row=1, column=0, columnspan=2, sticky="we", pady=(5, 0))
         
         # 字节进度
@@ -129,11 +131,11 @@ class RealTimeProgressWindow:
         self.byte_progress_label.grid(row=2, column=1, sticky="we", pady=(10, 0))
         
         # 字节进度条
-        self.byte_progress_bar = ttk.Progressbar(progress_frame, mode='determinate')
+        self.byte_progress_bar = ttk.Progressbar(progress_frame, mode='determinate', style="App.Horizontal.TProgressbar")
         self.byte_progress_bar.grid(row=3, column=0, columnspan=2, sticky="we", pady=(5, 0))
         
         # 速度和时间信息
-        stats_frame = ttk.LabelFrame(main_frame, text="速度统计", padding="5")
+        stats_frame = ttk.LabelFrame(main_frame, text="速度统计", padding=12, style="App.TLabelframe")
         stats_frame.grid(row=2, column=0, columnspan=2, sticky="we", pady=(0, 10))
         stats_frame.columnconfigure(1, weight=1)
         stats_frame.columnconfigure(3, weight=1)
@@ -155,7 +157,7 @@ class RealTimeProgressWindow:
         ttk.Label(stats_frame, textvariable=self.eta_var).grid(row=1, column=3, sticky=tk.W)
         
         # 详细进度列表
-        details_frame = ttk.LabelFrame(main_frame, text="下载详情", padding="5")
+        details_frame = ttk.LabelFrame(main_frame, text="下载详情", padding=12, style="App.TLabelframe")
         details_frame.grid(row=3, column=0, columnspan=2, sticky="wens", pady=(0, 10))
         details_frame.columnconfigure(0, weight=1)
         details_frame.rowconfigure(0, weight=1)
@@ -163,7 +165,7 @@ class RealTimeProgressWindow:
         
         # 创建Treeview
         columns = ("文件名", "状态", "进度", "大小", "速度")
-        self.tree = ttk.Treeview(details_frame, columns=columns, show="headings", height=12)
+        self.tree = ttk.Treeview(details_frame, columns=columns, show="headings", height=12, style="App.Treeview")
         
         # 设置列标题和宽度
         self.tree.heading("文件名", text="文件名")
@@ -186,16 +188,16 @@ class RealTimeProgressWindow:
         scrollbar.grid(row=0, column=1, sticky="ns")
         
         # 控制按钮
-        button_frame = ttk.Frame(main_frame)
+        button_frame = ttk.Frame(main_frame, style="App.TFrame")
         button_frame.grid(row=4, column=0, columnspan=2, sticky="we", pady=(10, 0))
         
-        self.pause_button = ttk.Button(button_frame, text="暂停", command=self.toggle_pause)
+        self.pause_button = style_button(ttk.Button(button_frame, text="暂停", command=self.toggle_pause), "secondary")
         self.pause_button.pack(side=tk.LEFT, padx=(0, 10))
         
-        self.cancel_button = ttk.Button(button_frame, text="取消", command=self.cancel_download)
+        self.cancel_button = style_button(ttk.Button(button_frame, text="取消", command=self.cancel_download), "danger")
         self.cancel_button.pack(side=tk.LEFT, padx=(0, 10))
         
-        ttk.Button(button_frame, text="关闭", command=self.close_window).pack(side=tk.RIGHT)
+        style_button(ttk.Button(button_frame, text="关闭", command=self.close_window), "ghost").pack(side=tk.RIGHT)
         
         # 绑定窗口关闭事件
         self.window.protocol("WM_DELETE_WINDOW", self.close_window)

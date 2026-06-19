@@ -12,6 +12,7 @@ import os
 
 from ..models.data_models import BatchTaskConfig, BatchCreationResult, TaskPreviewInfo
 from ..core.batch_task_creator import BatchTaskCreator
+from .theme import MODERN_LIGHT, center_window, style_button, style_window
 
 class BatchTaskDialog:
     """批量任务创建对话框"""
@@ -69,16 +70,11 @@ class BatchTaskDialog:
         # 创建对话框窗口
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("批量任务创建")
-        self.dialog.geometry("900x800")  # 增大窗口尺寸
         self.dialog.resizable(True, True)
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
-        # 居中显示
-        self.dialog.geometry("+%d+%d" % (
-            parent.winfo_rootx() + 50,
-            parent.winfo_rooty() + 50
-        ))
+        style_window(self.dialog, config)
+        center_window(self.dialog, parent, width=920, height=820)
         
         self._create_widgets()
         self._load_default_values()
@@ -88,7 +84,7 @@ class BatchTaskDialog:
     
     def _create_widgets(self):
         """创建界面控件"""
-        main_frame = ttk.Frame(self.dialog, padding=10)
+        main_frame = ttk.Frame(self.dialog, padding=16, style="App.TFrame")
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # 基本信息区域
@@ -108,16 +104,16 @@ class BatchTaskDialog:
     
     def _create_basic_info_section(self, parent):
         """创建基本信息区域"""
-        basic_frame = ttk.LabelFrame(parent, text="基本信息", padding=10)
+        basic_frame = ttk.LabelFrame(parent, text="基本信息", padding=12, style="App.TLabelframe")
         basic_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 主页面URL
         ttk.Label(basic_frame, text="主页面URL:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        url_frame = ttk.Frame(basic_frame)
+        url_frame = ttk.Frame(basic_frame, style="Surface.TFrame")
         url_frame.grid(row=0, column=1, columnspan=2, sticky=tk.EW, padx=(10, 0), pady=5)
         
         ttk.Entry(url_frame, textvariable=self.url_var, width=50).pack(side=tk.LEFT, fill=tk.X, expand=True)
-        self.analyze_button = ttk.Button(url_frame, text="分析", command=self.analyze_main_page, width=10)
+        self.analyze_button = style_button(ttk.Button(url_frame, text="分析", command=self.analyze_main_page, width=10), "primary")
         self.analyze_button.pack(side=tk.RIGHT, padx=(5, 0))
         
         # 配置列权重
@@ -125,11 +121,11 @@ class BatchTaskDialog:
     
     def _create_analysis_options_section(self, parent):
         """创建分析选项区域"""
-        options_frame = ttk.LabelFrame(parent, text="分析选项", padding=10)
+        options_frame = ttk.LabelFrame(parent, text="分析选项", padding=12, style="App.TLabelframe")
         options_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 第一行选项
-        row1_frame = ttk.Frame(options_frame)
+        row1_frame = ttk.Frame(options_frame, style="Surface.TFrame")
         row1_frame.pack(fill=tk.X, pady=5)
         
         self.detect_images_var = tk.BooleanVar(value=True)
@@ -139,7 +135,7 @@ class BatchTaskDialog:
         ttk.Checkbutton(row1_frame, text="跳过已下载目录", variable=self.skip_existing_var).pack(side=tk.LEFT, padx=(20, 0))
         
         # 第二行选项
-        row2_frame = ttk.Frame(options_frame)
+        row2_frame = ttk.Frame(options_frame, style="Surface.TFrame")
         row2_frame.pack(fill=tk.X, pady=5)
         
         ttk.Label(row2_frame, text="最大页面数:").pack(side=tk.LEFT)
@@ -153,23 +149,23 @@ class BatchTaskDialog:
     
     def _create_task_preview_section(self, parent):
         """创建任务预览区域"""
-        preview_frame = ttk.LabelFrame(parent, text="任务预览", padding=10)
+        preview_frame = ttk.LabelFrame(parent, text="任务预览", padding=12, style="App.TLabelframe")
         preview_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
         
         # 统计信息
-        self.stats_frame = ttk.Frame(preview_frame)
+        self.stats_frame = ttk.Frame(preview_frame, style="Surface.TFrame")
         self.stats_frame.pack(fill=tk.X, pady=(0, 10))
         
         self.stats_var = tk.StringVar(value="发现页面: 0个  有效任务: 0个  跳过: 0个")
         ttk.Label(self.stats_frame, textvariable=self.stats_var, font=('Arial', 9, 'bold')).pack(side=tk.LEFT)
         
         # 任务列表
-        list_frame = ttk.Frame(preview_frame)
+        list_frame = ttk.Frame(preview_frame, style="Surface.TFrame")
         list_frame.pack(fill=tk.BOTH, expand=True)
         
         # 创建Treeview
         columns = ('status', 'url', 'directory', 'images')
-        self.task_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=12)
+        self.task_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=12, style="App.Treeview")
         
         # 设置列标题
         self.task_tree.heading('#0', text='选择')
@@ -197,12 +193,12 @@ class BatchTaskDialog:
         self.task_tree.bind('<Button-1>', self.on_tree_click)
         
         # 选择按钮
-        select_frame = ttk.Frame(preview_frame)
+        select_frame = ttk.Frame(preview_frame, style="Surface.TFrame")
         select_frame.pack(fill=tk.X, pady=(10, 0))
         
-        ttk.Button(select_frame, text="全选", command=self.select_all, width=8).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(select_frame, text="全不选", command=self.select_none, width=8).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(select_frame, text="反选", command=self.select_inverse, width=8).pack(side=tk.LEFT, padx=(0, 5))
+        style_button(ttk.Button(select_frame, text="全选", command=self.select_all, width=8), "secondary").pack(side=tk.LEFT, padx=(0, 5))
+        style_button(ttk.Button(select_frame, text="全不选", command=self.select_none, width=8), "ghost").pack(side=tk.LEFT, padx=(0, 5))
+        style_button(ttk.Button(select_frame, text="反选", command=self.select_inverse, width=8), "secondary").pack(side=tk.LEFT, padx=(0, 5))
         
         # 进度显示
         self.progress_var = tk.StringVar(value="")
@@ -210,7 +206,7 @@ class BatchTaskDialog:
     
     def _create_execution_options_section(self, parent):
         """创建执行选项区域"""
-        exec_frame = ttk.LabelFrame(parent, text="执行选项", padding=10)
+        exec_frame = ttk.LabelFrame(parent, text="执行选项", padding=12, style="App.TLabelframe")
         exec_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 执行方式选择
@@ -220,7 +216,7 @@ class BatchTaskDialog:
                        value="immediate", command=self.on_exec_mode_changed).pack(anchor=tk.W, pady=2)
         
         # 计划执行
-        schedule_frame = ttk.Frame(exec_frame)
+        schedule_frame = ttk.Frame(exec_frame, style="Surface.TFrame")
         schedule_frame.pack(fill=tk.X, pady=2)
         
         ttk.Radiobutton(schedule_frame, text="计划执行:", variable=self.exec_mode_var,
@@ -240,30 +236,30 @@ class BatchTaskDialog:
     
     def _create_button_section(self, parent):
         """创建按钮区域"""
-        button_frame = ttk.Frame(parent)
+        button_frame = ttk.Frame(parent, style="App.TFrame")
         button_frame.pack(fill=tk.X, pady=(20, 0))
         
         # 分隔线
         ttk.Separator(button_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(0, 10))
         
         # 按钮容器
-        buttons_container = ttk.Frame(button_frame)
+        buttons_container = ttk.Frame(button_frame, style="App.TFrame")
         buttons_container.pack(fill=tk.X)
         
         # 左侧按钮
-        left_buttons = ttk.Frame(buttons_container)
+        left_buttons = ttk.Frame(buttons_container, style="App.TFrame")
         left_buttons.pack(side=tk.LEFT)
         
-        self.create_button = ttk.Button(left_buttons, text="创建任务", command=self.create_batch_tasks, width=12)
+        self.create_button = style_button(ttk.Button(left_buttons, text="创建任务", command=self.create_batch_tasks, width=12), "primary")
         self.create_button.pack(side=tk.LEFT, padx=(0, 10))
         self.create_button.configure(state='disabled')  # 初始禁用
         
-        self.save_button = ttk.Button(left_buttons, text="保存任务", command=self.save_batch_tasks, width=12)
+        self.save_button = style_button(ttk.Button(left_buttons, text="保存任务", command=self.save_batch_tasks, width=12), "secondary")
         self.save_button.pack(side=tk.LEFT, padx=(0, 10))
         self.save_button.configure(state='disabled')  # 初始禁用
         
         # 右侧按钮
-        self.cancel_button = ttk.Button(buttons_container, text="取消", command=self.on_closing, width=8)
+        self.cancel_button = style_button(ttk.Button(buttons_container, text="取消", command=self.on_closing, width=8), "ghost")
         self.cancel_button.pack(side=tk.RIGHT)
     
     def _load_default_values(self):
@@ -411,8 +407,8 @@ class BatchTaskDialog:
             self.task_tree.item(item_id, tags=(f'task_{i}', 'selected' if task.selected else 'unselected'))
         
         # 配置标签样式
-        self.task_tree.tag_configure('selected', background='lightblue')
-        self.task_tree.tag_configure('unselected', background='lightgray')
+        self.task_tree.tag_configure('selected', background=MODERN_LIGHT["info_soft"], foreground=MODERN_LIGHT["text"])
+        self.task_tree.tag_configure('unselected', background=MODERN_LIGHT["surface_alt"], foreground=MODERN_LIGHT["text_muted"])
     
     def on_tree_click(self, event):
         """处理树形控件点击事件"""

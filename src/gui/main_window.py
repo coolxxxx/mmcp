@@ -15,6 +15,14 @@ from .task_dialog import TaskDialog
 from .batch_task_dialog import BatchTaskDialog
 from .realtime_progress_window import RealTimeProgressWindow
 from .settings_dialog import SettingsDialog
+from .theme import (
+    apply_app_theme,
+    center_window,
+    configure_treeview_tags,
+    status_tag,
+    status_text,
+    style_button,
+)
 
 class MainWindow:
     """主窗口类"""
@@ -40,7 +48,10 @@ class MainWindow:
         self.status_var: tk.StringVar
         self.stats_var: tk.StringVar
         self._update_timer: str | None = None
-        
+        self.empty_state_frame: ttk.Frame
+        self.task_frame: ttk.Frame
+
+        apply_app_theme(self.root, config)
         self._setup_window()
         self._create_widgets()
         
@@ -59,93 +70,120 @@ class MainWindow:
         width = self.config.get('gui.window_width', 900)
         height = self.config.get('gui.window_height', 700)
         
-        # 居中显示
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        x = (screen_width - width) // 2
-        y = (screen_height - height) // 2
-        
-        self.root.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(self.root, width=width, height=height)
         self.root.minsize(800, 600)
     
     def _create_widgets(self):
         """创建界面控件"""
         # 主框架
-        main_frame = ttk.Frame(self.root)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        main_frame = ttk.Frame(self.root, style="App.TFrame")
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=16, pady=14)
+
+        # 顶部标题区
+        self._create_header(main_frame)
         
         # 工具栏
         self._create_toolbar(main_frame)
-        
-        # 分隔器
-        ttk.Separator(main_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=5)
         
         # 任务列表
         self._create_task_list(main_frame)
         
         # 状态栏
         self._create_status_bar(main_frame)
+
+    def _create_header(self, parent: ttk.Frame) -> None:
+        """创建顶部标题区"""
+        header = ttk.Frame(parent, style="App.TFrame")
+        header.pack(fill=tk.X, pady=(0, 12))
+
+        title_group = ttk.Frame(header, style="App.TFrame")
+        title_group.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        ttk.Label(title_group, text="图片批量下载器", style="Title.TLabel").pack(anchor=tk.W)
+        ttk.Label(
+            title_group,
+            text="管理网页图集任务、批量解析与下载进度",
+            style="Subtitle.TLabel",
+        ).pack(anchor=tk.W, pady=(3, 0))
+
+        quick_actions = ttk.Frame(header, style="App.TFrame")
+        quick_actions.pack(side=tk.RIGHT)
+        style_button(ttk.Button(quick_actions, text="新建任务", command=self.new_task), "primary").pack(side=tk.LEFT, padx=(0, 8))
+        style_button(ttk.Button(quick_actions, text="批量创建", command=self.open_batch_creator), "secondary").pack(side=tk.LEFT)
     
     def _create_toolbar(self, parent: ttk.Frame) -> None:
         """创建工具栏"""
-        toolbar = ttk.Frame(parent)
-        toolbar.pack(fill=tk.X, pady=(0, 5))
+        toolbar = ttk.Frame(parent, style="Toolbar.TFrame")
+        toolbar.pack(fill=tk.X, pady=(0, 12))
         
         # 任务操作组
-        task_group = ttk.LabelFrame(toolbar, text="任务操作", padding=5)
+        task_group = ttk.LabelFrame(toolbar, text="任务操作", padding=10, style="App.TLabelframe")
         task_group.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
         
         # 使用网格布局
-        ttk.Button(task_group, text="新建任务", command=self.new_task, width=12).grid(row=0, column=0, padx=2, pady=2)
-        ttk.Button(task_group, text="批量创建", command=self.open_batch_creator, width=12).grid(row=0, column=1, padx=2, pady=2)
-        ttk.Button(task_group, text="开始任务", command=self.start_selected_task, width=12).grid(row=1, column=0, padx=2, pady=2)
-        ttk.Button(task_group, text="重新下载", command=self.restart_selected_task, width=12).grid(row=1, column=1, padx=2, pady=2)
+        style_button(ttk.Button(task_group, text="新建任务", command=self.new_task, width=12), "primary").grid(row=0, column=0, padx=3, pady=3)
+        style_button(ttk.Button(task_group, text="批量创建", command=self.open_batch_creator, width=12), "secondary").grid(row=0, column=1, padx=3, pady=3)
+        style_button(ttk.Button(task_group, text="开始任务", command=self.start_selected_task, width=12), "primary").grid(row=1, column=0, padx=3, pady=3)
+        style_button(ttk.Button(task_group, text="重新下载", command=self.restart_selected_task, width=12), "secondary").grid(row=1, column=1, padx=3, pady=3)
         
         # 管理操作组
-        manage_group = ttk.LabelFrame(toolbar, text="管理操作", padding=5)
+        manage_group = ttk.LabelFrame(toolbar, text="管理操作", padding=10, style="App.TLabelframe")
         manage_group.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
         
-        ttk.Button(manage_group, text="取消任务", command=self.cancel_selected_task, width=12).grid(row=0, column=0, padx=2, pady=2)
-        ttk.Button(manage_group, text="删除任务", command=self.delete_selected_task, width=12).grid(row=0, column=1, padx=2, pady=2)
-        ttk.Button(manage_group, text="图片预览", command=self.preview_images, width=12).grid(row=1, column=0, padx=2, pady=2)
-        ttk.Button(manage_group, text="打开目录", command=self.open_download_folder, width=12).grid(row=1, column=1, padx=2, pady=2)
+        style_button(ttk.Button(manage_group, text="取消任务", command=self.cancel_selected_task, width=12), "danger").grid(row=0, column=0, padx=3, pady=3)
+        style_button(ttk.Button(manage_group, text="删除任务", command=self.delete_selected_task, width=12), "danger").grid(row=0, column=1, padx=3, pady=3)
+        style_button(ttk.Button(manage_group, text="图片预览", command=self.preview_images, width=12), "secondary").grid(row=1, column=0, padx=3, pady=3)
+        style_button(ttk.Button(manage_group, text="打开目录", command=self.open_download_folder, width=12), "secondary").grid(row=1, column=1, padx=3, pady=3)
         
         # 右侧设置按钮
-        right_buttons = ttk.Frame(toolbar)
+        right_buttons = ttk.Frame(toolbar, style="Toolbar.TFrame")
         right_buttons.pack(side=tk.RIGHT)
         
-        ttk.Button(right_buttons, text="设置", command=self.open_settings, width=8).pack()
+        style_button(ttk.Button(right_buttons, text="设置", command=self.open_settings, width=8), "ghost").pack()
     
     def _create_task_list(self, parent: ttk.Frame) -> None:
         """创建任务列表"""
         # 添加批量操作工具栏
-        batch_toolbar = ttk.Frame(parent)
-        batch_toolbar.pack(fill=tk.X, pady=(0, 5))
+        batch_toolbar = ttk.Frame(parent, style="Toolbar.TFrame")
+        batch_toolbar.pack(fill=tk.X, pady=(0, 10))
         
         # 批量选择操作
-        batch_select_frame = ttk.LabelFrame(batch_toolbar, text="批量选择", padding=5)
+        batch_select_frame = ttk.LabelFrame(batch_toolbar, text="批量选择", padding=10, style="App.TLabelframe")
         batch_select_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
         
-        ttk.Button(batch_select_frame, text="全选", command=self.select_all_tasks, width=8).grid(row=0, column=0, padx=2)
-        ttk.Button(batch_select_frame, text="反选", command=self.invert_selection, width=8).grid(row=0, column=1, padx=2)
-        ttk.Button(batch_select_frame, text="清空", command=self.clear_selection, width=8).grid(row=0, column=2, padx=2)
+        style_button(ttk.Button(batch_select_frame, text="全选", command=self.select_all_tasks, width=8), "secondary").grid(row=0, column=0, padx=3)
+        style_button(ttk.Button(batch_select_frame, text="反选", command=self.invert_selection, width=8), "secondary").grid(row=0, column=1, padx=3)
+        style_button(ttk.Button(batch_select_frame, text="清空", command=self.clear_selection, width=8), "ghost").grid(row=0, column=2, padx=3)
         
         # 批量操作
-        batch_ops_frame = ttk.LabelFrame(batch_toolbar, text="批量操作", padding=5)
+        batch_ops_frame = ttk.LabelFrame(batch_toolbar, text="批量操作", padding=10, style="App.TLabelframe")
         batch_ops_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
         
-        ttk.Button(batch_ops_frame, text="开始", command=self.batch_start_tasks, width=8).grid(row=0, column=0, padx=2)
-        ttk.Button(batch_ops_frame, text="暂停", command=self.batch_pause_tasks, width=8).grid(row=0, column=1, padx=2)
-        ttk.Button(batch_ops_frame, text="取消", command=self.batch_cancel_tasks, width=8).grid(row=0, column=2, padx=2)
-        ttk.Button(batch_ops_frame, text="删除", command=self.batch_delete_tasks, width=8).grid(row=0, column=3, padx=2)
+        style_button(ttk.Button(batch_ops_frame, text="开始", command=self.batch_start_tasks, width=8), "primary").grid(row=0, column=0, padx=3)
+        style_button(ttk.Button(batch_ops_frame, text="暂停", command=self.batch_pause_tasks, width=8), "secondary").grid(row=0, column=1, padx=3)
+        style_button(ttk.Button(batch_ops_frame, text="取消", command=self.batch_cancel_tasks, width=8), "danger").grid(row=0, column=2, padx=3)
+        style_button(ttk.Button(batch_ops_frame, text="删除", command=self.batch_delete_tasks, width=8), "danger").grid(row=0, column=3, padx=3)
         
         # 选择状态显示
         self.selection_status_var = tk.StringVar(value="已选择: 0 个任务")
-        ttk.Label(batch_toolbar, textvariable=self.selection_status_var).pack(side=tk.RIGHT, padx=(10, 0))
+        ttk.Label(batch_toolbar, textvariable=self.selection_status_var, style="Muted.TLabel").pack(side=tk.RIGHT, padx=(10, 0))
+
+        self.empty_state_frame = ttk.Frame(parent, style="Card.TFrame", padding=28)
+        ttk.Label(self.empty_state_frame, text="还没有下载任务", style="CardTitle.TLabel").pack(anchor=tk.CENTER)
+        ttk.Label(
+            self.empty_state_frame,
+            text="创建单个任务，或从入口页面批量分析图集。",
+            style="SurfaceMuted.TLabel",
+        ).pack(anchor=tk.CENTER, pady=(6, 14))
+        empty_actions = ttk.Frame(self.empty_state_frame, style="Card.TFrame")
+        empty_actions.pack(anchor=tk.CENTER)
+        style_button(ttk.Button(empty_actions, text="新建任务", command=self.new_task), "primary").pack(side=tk.LEFT, padx=(0, 8))
+        style_button(ttk.Button(empty_actions, text="批量创建", command=self.open_batch_creator), "secondary").pack(side=tk.LEFT)
         
         # 任务列表
         columns = ('name', 'status', 'progress', 'images')
-        self.task_tree = ttk.Treeview(parent, columns=columns, show='headings', height=15, selectmode='extended')
+        self.task_frame = ttk.Frame(parent, style="Card.TFrame", padding=10)
+        self.task_tree = ttk.Treeview(self.task_frame, columns=columns, show='headings', height=15, selectmode='extended', style="App.Treeview")
         
         # 设置列标题
         self.task_tree.heading('name', text='任务名称')
@@ -159,13 +197,14 @@ class MainWindow:
         self.task_tree.column('progress', width=100)
         self.task_tree.column('images', width=100)
         
+        configure_treeview_tags(self.task_tree)
+
         # 添加滚动条
-        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=self.task_tree.yview)
+        scrollbar = ttk.Scrollbar(self.task_frame, orient=tk.VERTICAL, command=self.task_tree.yview)
         self.task_tree.configure(yscrollcommand=scrollbar.set)
         
         # 布局
-        task_frame = ttk.Frame(parent)
-        task_frame.pack(fill=tk.BOTH, expand=True)
+        self.task_frame.pack(fill=tk.BOTH, expand=True)
         self.task_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
@@ -175,22 +214,20 @@ class MainWindow:
     
     def _create_status_bar(self, parent: ttk.Frame) -> None:
         """创建状态栏"""
-        status_frame = ttk.Frame(parent)
-        status_frame.pack(fill=tk.X, pady=(5, 0))
+        status_frame = ttk.Frame(parent, style="Status.TFrame", padding=(10, 8))
+        status_frame.pack(fill=tk.X, pady=(10, 0))
         
-        ttk.Separator(status_frame, orient=tk.HORIZONTAL).pack(fill=tk.X)
-        
-        info_frame = ttk.Frame(status_frame)
+        info_frame = ttk.Frame(status_frame, style="Status.TFrame")
         info_frame.pack(fill=tk.X, pady=2)
         
         self.status_var = tk.StringVar(value="就绪")
-        ttk.Label(info_frame, textvariable=self.status_var).pack(side=tk.LEFT)
+        ttk.Label(info_frame, textvariable=self.status_var, style="StatusMuted.TLabel").pack(side=tk.LEFT)
         
         self.stats_var = tk.StringVar(value="任务: 0 | 运行: 0 | 完成: 0")
-        ttk.Label(info_frame, textvariable=self.stats_var).pack(side=tk.LEFT)
+        ttk.Label(info_frame, textvariable=self.stats_var, style="StatusMuted.TLabel").pack(side=tk.LEFT, padx=(18, 0))
         
         # 批量任务统计
-        ttk.Label(info_frame, textvariable=self.batch_stats_var).pack(side=tk.RIGHT, padx=(20, 0))
+        ttk.Label(info_frame, textvariable=self.batch_stats_var, style="StatusMuted.TLabel").pack(side=tk.RIGHT, padx=(20, 0))
     
     def new_task(self):
         """新建任务"""
@@ -485,17 +522,26 @@ class MainWindow:
         
         # 添加任务
         tasks = self.scheduler.get_all_tasks()
+        if tasks:
+            self.empty_state_frame.pack_forget()
+            if not self.task_frame.winfo_ismapped():
+                self.task_frame.pack(fill=tk.BOTH, expand=True)
+        else:
+            self.task_frame.pack_forget()
+            if not self.empty_state_frame.winfo_ismapped():
+                self.empty_state_frame.pack(fill=tk.BOTH, expand=True)
+
         for task in tasks:
-            status_text = self._get_status_text(task.status)
+            current_status_text = self._get_status_text(task.status)
             progress_text = f"{task.progress:.1f}%" if task.total_images > 0 else "0%"
             images_text = f"{task.downloaded_images}/{task.total_images}"
             
             self.task_tree.insert('', tk.END, iid=task.id, values=(
                 task.name,
-                status_text,
+                current_status_text,
                 progress_text,
                 images_text
-            ))
+            ), tags=(status_tag(task.status),))
         
         # 恢复选中状态（只恢复仍然存在的任务）
         valid_selection = [task_id for task_id in current_selection if self.task_tree.exists(task_id)]
@@ -520,15 +566,7 @@ class MainWindow:
     
     def _get_status_text(self, status: TaskStatus) -> str:
         """获取状态文本"""
-        status_map = {
-            TaskStatus.PENDING: "等待",
-            TaskStatus.RUNNING: "运行中",
-            TaskStatus.COMPLETED: "完成",
-            TaskStatus.FAILED: "失败",
-            TaskStatus.CANCELLED: "取消",
-            TaskStatus.SCHEDULED: "计划中"
-        }
-        return status_map.get(status, "未知")
+        return status_text(status)
     
     def _update_interface(self):
         """定时更新界面"""

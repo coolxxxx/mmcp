@@ -19,6 +19,13 @@
 pip install -r requirements.txt
 ```
 
+如果需要运行测试或开发调试，请安装开发依赖：
+
+```bash
+pip install -r requirements-dev.txt
+python run_tests.py
+```
+
 ## 使用方法
 
 1. 运行主程序：

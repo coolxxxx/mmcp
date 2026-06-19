@@ -15,6 +15,7 @@ import threading
 import queue
 from concurrent.futures import ThreadPoolExecutor
 import math
+from .theme import center_window, style_button, style_window
 
 class EnhancedImagePreviewWindow:
     """增强的图片预览窗口类，支持网格和单图两种模式"""
@@ -94,19 +95,19 @@ class EnhancedImagePreviewWindow:
         self.window = tk.Toplevel(self.parent)
         self.window.title(f"图片预览 - 共 {len(self.image_paths)} 张")
         
-        # 设置窗口尺寸
-        self.window.geometry("1200x900")
+        style_window(self.window)
+        center_window(self.window, self.parent, width=1200, height=900)
         self.window.minsize(self.min_window_width, self.min_window_height)
         
         # 创建主框架
-        self.main_frame = ttk.Frame(self.window)
+        self.main_frame = ttk.Frame(self.window, style="App.TFrame")
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # 创建工具栏
         self._create_toolbar()
         
         # 创建内容区域
-        self.content_frame = ttk.Frame(self.main_frame)
+        self.content_frame = ttk.Frame(self.main_frame, style="App.TFrame")
         self.content_frame.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
         
         # 创建状态栏
@@ -130,11 +131,11 @@ class EnhancedImagePreviewWindow:
     
     def _create_toolbar(self):
         """创建工具栏"""
-        toolbar = ttk.Frame(self.main_frame)
+        toolbar = ttk.Frame(self.main_frame, style="Toolbar.TFrame")
         toolbar.pack(fill=tk.X, pady=(0, 10))
         
         # 左侧按钮组
-        left_buttons = ttk.Frame(toolbar)
+        left_buttons = ttk.Frame(toolbar, style="Toolbar.TFrame")
         left_buttons.pack(side=tk.LEFT)
         
         # 视图模式选择
@@ -149,48 +150,48 @@ class EnhancedImagePreviewWindow:
         ttk.Separator(left_buttons, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
         
         # 导航按钮（单图模式时可用）
-        self.nav_frame = ttk.Frame(left_buttons)
+        self.nav_frame = ttk.Frame(left_buttons, style="Toolbar.TFrame")
         self.nav_frame.pack(side=tk.LEFT)
         
-        self.prev_btn = ttk.Button(self.nav_frame, text="上一张 (←)", 
-                                  command=self.previous_image, state=tk.DISABLED)
+        self.prev_btn = style_button(ttk.Button(self.nav_frame, text="上一张 (←)",
+                                  command=self.previous_image, state=tk.DISABLED), "secondary")
         self.prev_btn.pack(side=tk.LEFT, padx=(0, 5))
         
-        self.next_btn = ttk.Button(self.nav_frame, text="下一张 (→)", 
-                                  command=self.next_image, state=tk.DISABLED)
+        self.next_btn = style_button(ttk.Button(self.nav_frame, text="下一张 (→)",
+                                  command=self.next_image, state=tk.DISABLED), "secondary")
         self.next_btn.pack(side=tk.LEFT, padx=(0, 5))
         
         # 分隔符
         ttk.Separator(left_buttons, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
         
         # 操作按钮
-        ttk.Button(left_buttons, text="刷新 (F5)", command=self.refresh_view).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(left_buttons, text="打开文件夹", command=self.open_current_folder).pack(side=tk.LEFT, padx=(0, 5))
+        style_button(ttk.Button(left_buttons, text="刷新 (F5)", command=self.refresh_view), "secondary").pack(side=tk.LEFT, padx=(0, 5))
+        style_button(ttk.Button(left_buttons, text="打开文件夹", command=self.open_current_folder), "secondary").pack(side=tk.LEFT, padx=(0, 5))
         
         # 右侧按钮组
-        right_buttons = ttk.Frame(toolbar)
+        right_buttons = ttk.Frame(toolbar, style="Toolbar.TFrame")
         right_buttons.pack(side=tk.RIGHT)
         
-        ttk.Button(right_buttons, text="关闭 (Esc)", command=self.close_window).pack(side=tk.RIGHT)
+        style_button(ttk.Button(right_buttons, text="关闭 (Esc)", command=self.close_window), "ghost").pack(side=tk.RIGHT)
     
     def _create_status_bar(self):
         """创建状态栏"""
-        status_frame = ttk.Frame(self.main_frame)
+        status_frame = ttk.Frame(self.main_frame, style="Status.TFrame", padding=(8, 6))
         status_frame.pack(fill=tk.X, pady=(10, 0))
         
         # 添加分隔线
         ttk.Separator(status_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(0, 5))
         
         # 信息显示
-        info_frame = ttk.Frame(status_frame)
+        info_frame = ttk.Frame(status_frame, style="Status.TFrame")
         info_frame.pack(fill=tk.X)
         
         self.info_var = tk.StringVar(value=f"共 {len(self.image_paths)} 张图片")
-        ttk.Label(info_frame, textvariable=self.info_var).pack(side=tk.LEFT)
+        ttk.Label(info_frame, textvariable=self.info_var, style="StatusMuted.TLabel").pack(side=tk.LEFT)
         
         # 加载进度（右对齐）
         self.progress_var = tk.StringVar(value="")
-        self.progress_label = ttk.Label(info_frame, textvariable=self.progress_var)
+        self.progress_label = ttk.Label(info_frame, textvariable=self.progress_var, style="StatusMuted.TLabel")
         self.progress_label.pack(side=tk.RIGHT)
     
     def _switch_to_grid_mode(self):
@@ -232,9 +233,9 @@ class EnhancedImagePreviewWindow:
     def _create_grid_view(self):
         """创建网格视图"""
         # 创建滚动区域
-        canvas = tk.Canvas(self.content_frame, highlightthickness=0)
+        canvas = tk.Canvas(self.content_frame, highlightthickness=0, background="#F8FAFC")
         scrollbar = ttk.Scrollbar(self.content_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
+        scrollable_frame = ttk.Frame(canvas, style="Surface.TFrame")
         
         scrollable_frame.bind(
             "<Configure>",
@@ -276,7 +277,7 @@ class EnhancedImagePreviewWindow:
                     break
                 
                 # 创建图片框架
-                img_frame = ttk.Frame(self.grid_scrollable_frame, relief="ridge", padding=5)
+                img_frame = ttk.Frame(self.grid_scrollable_frame, style="Card.TFrame", padding=6)
                 img_frame.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
                 
                 # 占位标签
@@ -297,15 +298,15 @@ class EnhancedImagePreviewWindow:
     def _create_single_view(self):
         """创建单图视图"""
         # 创建图片显示区域
-        image_frame = ttk.LabelFrame(self.content_frame, text="图片预览", padding=10)
+        image_frame = ttk.LabelFrame(self.content_frame, text="图片预览", padding=12, style="App.TLabelframe")
         image_frame.pack(fill=tk.BOTH, expand=True)
         
         # 创建画布
         self.single_canvas = tk.Canvas(
             image_frame, 
-            bg='white',
+            bg='#F8FAFC',
             highlightthickness=1,
-            highlightbackground='gray'
+            highlightbackground='#D8E0EA'
         )
         
         # 添加滚动条
@@ -756,7 +757,7 @@ class EnhancedImagePreviewWindow:
                         break
                     
                     # 创建图片框架
-                    img_frame = ttk.Frame(self.grid_scrollable_frame, relief="ridge", padding=5)
+                    img_frame = ttk.Frame(self.grid_scrollable_frame, style="Card.TFrame", padding=6)
                     img_frame.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
                     
                     # 如果有缓存的缩略图，直接使用

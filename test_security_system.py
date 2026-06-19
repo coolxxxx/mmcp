@@ -8,6 +8,12 @@ import tempfile
 import json
 from pathlib import Path
 
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 # 添加项目路径
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -88,7 +94,7 @@ def dangerous_function(user_input):
     
     # 硬编码密码
     password = "super_secret_password_123"
-    api_key = "sk-1234567890abcdef1234567890abcdef"
+    api_key = "fake_api_key_for_security_scan_test_only"
     
     # 使用弱加密
     import hashlib
@@ -119,11 +125,12 @@ def sql_injection_example(user_id):
         print(f"   低危: {report.summary['low_issues']}")
         
         # 导出报告
-        report_file = "security_report.json"
-        checker.export_report(report, report_file, 'json')
+        report_file = test_dir / "security_report.json"
+        checker.export_report(report, str(report_file), 'json')
         print(f"✅ 安全报告已导出: {report_file}")
         
         # 清理测试文件
+        report_file.unlink()
         test_file.unlink()
         test_dir.rmdir()
         
@@ -155,7 +162,7 @@ def test_safe_executor():
             print(f"✅ 危险命令被成功阻止: {type(e).__name__}")
         
         # 测试安全文件操作
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, encoding='utf-8') as temp_file:
             temp_path = temp_file.name
             temp_file.write("测试内容")
         

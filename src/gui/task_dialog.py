@@ -12,6 +12,7 @@ import os
 
 # 导入配置管理模块
 from ..core.config import Config
+from .theme import center_window, style_button, style_window
 
 class TaskDialog:
     """任务创建/编辑对话框"""
@@ -35,27 +36,22 @@ class TaskDialog:
         # 创建对话框窗口
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(title)
-        self.dialog.geometry("650x650")  # 增加窗口高度
         self.dialog.resizable(False, False)
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
-        # 居中显示
-        self.dialog.geometry("+%d+%d" % (
-            parent.winfo_rootx() + 50,
-            parent.winfo_rooty() + 50
-        ))
+        style_window(self.dialog, self.config)
+        center_window(self.dialog, parent, width=650, height=650)
         
         self._create_widgets()
         self._load_data()
     
     def _create_widgets(self):
         """创建界面控件"""
-        main_frame = ttk.Frame(self.dialog, padding=10)
+        main_frame = ttk.Frame(self.dialog, padding=16, style="App.TFrame")
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # 基本信息
-        basic_frame = ttk.LabelFrame(main_frame, text="基本信息", padding=10)
+        basic_frame = ttk.LabelFrame(main_frame, text="基本信息", padding=12, style="App.TLabelframe")
         basic_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 任务名称
@@ -78,7 +74,7 @@ class TaskDialog:
         ttk.Entry(basic_frame, textvariable=self.path_var, width=40).grid(
             row=2, column=1, sticky=tk.EW, padx=(10, 0), pady=5
         )
-        ttk.Button(basic_frame, text="浏览", command=self.browse_directory).grid(
+        style_button(ttk.Button(basic_frame, text="浏览", command=self.browse_directory), "secondary").grid(
             row=2, column=2, padx=(5, 0), pady=5
         )
         
@@ -86,7 +82,7 @@ class TaskDialog:
         basic_frame.columnconfigure(1, weight=1)
         
         # 高级选项
-        advanced_frame = ttk.LabelFrame(main_frame, text="高级选项", padding=10)
+        advanced_frame = ttk.LabelFrame(main_frame, text="高级选项", padding=12, style="App.TLabelframe")
         advanced_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 最大深度
@@ -97,10 +93,10 @@ class TaskDialog:
         
         # URL模式
         ttk.Label(advanced_frame, text="URL模式:").grid(row=1, column=0, sticky=tk.NW, pady=5)
-        pattern_frame = ttk.Frame(advanced_frame)
+        pattern_frame = ttk.Frame(advanced_frame, style="Surface.TFrame")
         pattern_frame.grid(row=1, column=1, columnspan=2, sticky=tk.EW, padx=(10, 0), pady=5)
         
-        self.pattern_text = tk.Text(pattern_frame, height=3, width=40)  # 减少高度
+        self.pattern_text = tk.Text(pattern_frame, height=3, width=40, relief=tk.FLAT, padx=6, pady=6)  # 减少高度
         pattern_scroll = ttk.Scrollbar(pattern_frame, orient=tk.VERTICAL, command=self.pattern_text.yview)
         self.pattern_text.configure(yscrollcommand=pattern_scroll.set)
         
@@ -114,7 +110,7 @@ class TaskDialog:
         )
         
         # 调度选项
-        schedule_frame = ttk.LabelFrame(main_frame, text="计划执行", padding=10)
+        schedule_frame = ttk.LabelFrame(main_frame, text="计划执行", padding=12, style="App.TLabelframe")
         schedule_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 立即执行/计划执行
@@ -136,7 +132,7 @@ class TaskDialog:
         ).grid(row=1, column=0, sticky=tk.W, pady=2)
         
         # 计划时间
-        self.schedule_frame = ttk.Frame(schedule_frame)
+        self.schedule_frame = ttk.Frame(schedule_frame, style="Surface.TFrame")
         self.schedule_frame.grid(row=1, column=1, sticky=tk.EW, padx=(20, 0))
         
         ttk.Label(self.schedule_frame, text="日期:").grid(row=0, column=0, sticky=tk.W, padx=5)
@@ -155,28 +151,28 @@ class TaskDialog:
         self.on_schedule_type_changed()
         
         # 按钮区域
-        button_frame = ttk.Frame(main_frame)
+        button_frame = ttk.Frame(main_frame, style="App.TFrame")
         button_frame.pack(fill=tk.X, pady=(20, 10))  # 增加间距
         
         # 添加分隔线
         ttk.Separator(button_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(0, 10))
         
         # 按钮容器
-        buttons_container = ttk.Frame(button_frame)
+        buttons_container = ttk.Frame(button_frame, style="App.TFrame")
         buttons_container.pack(fill=tk.X)
         
         # 左侧按钮组（保存和立即执行）
-        left_button_frame = ttk.Frame(buttons_container)
+        left_button_frame = ttk.Frame(buttons_container, style="App.TFrame")
         left_button_frame.pack(side=tk.LEFT)
         
-        self.save_button = ttk.Button(left_button_frame, text="保存任务", command=self.on_save, width=12)
+        self.save_button = style_button(ttk.Button(left_button_frame, text="保存任务", command=self.on_save, width=12), "secondary")
         self.save_button.pack(side=tk.LEFT, padx=(0, 10))
         
-        self.execute_button = ttk.Button(left_button_frame, text="立即执行", command=self.on_execute, width=12)
+        self.execute_button = style_button(ttk.Button(left_button_frame, text="立即执行", command=self.on_execute, width=12), "primary")
         self.execute_button.pack(side=tk.LEFT, padx=(0, 10))
         
         # 右侧按钮（取消）
-        ttk.Button(buttons_container, text="取消", command=self.on_cancel, width=8).pack(side=tk.RIGHT)
+        style_button(ttk.Button(buttons_container, text="取消", command=self.on_cancel, width=8), "ghost").pack(side=tk.RIGHT)
     
     def _load_data(self):
         """加载任务数据"""

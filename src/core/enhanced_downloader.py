@@ -115,7 +115,8 @@ class EnhancedDownloadManager(DownloadManager):
                     filename = getattr(image_info, 'filename', 'unknown_file')
                     self.logger.info(f"文件已存在，跳过下载: {filename}")
                     # 标记跳过并实时同步UI为100%
-                    self.stats['skipped'] = self.stats.get('skipped', 0) + 1
+                    with self.status_lock:
+                        self.stats['skipped'] = self.stats.get('skipped', 0) + 1
                     self.update_image_status(image_info, DownloadStatus.COMPLETED)
                     self.notify_progress(image_info, file_size, file_size)
                     return True
@@ -152,8 +153,9 @@ class EnhancedDownloadManager(DownloadManager):
             
             # 更新状态为完成
             self.update_image_status(image_info, DownloadStatus.COMPLETED)
-            self.stats['success'] += 1
-            self.stats['bytes_downloaded'] += downloaded_size
+            with self.status_lock:
+                self.stats['success'] = self.stats.get('success', 0) + 1
+                self.stats['bytes_downloaded'] = self.stats.get('bytes_downloaded', 0) + downloaded_size
             
             self.logger.info(f"下载完成: {filename}")
             return True
@@ -162,14 +164,16 @@ class EnhancedDownloadManager(DownloadManager):
             filename = getattr(image_info, 'filename', 'unknown_file')
             self.logger.error(f"下载失败 {filename}: {e}")
             self.update_image_status(image_info, DownloadStatus.FAILED)
-            self.stats['failed'] += 1
+            with self.status_lock:
+                self.stats['failed'] = self.stats.get('failed', 0) + 1
             return False
             
         except Exception as e:
             filename = getattr(image_info, 'filename', 'unknown_file')
             self.logger.error(f"下载异常 {filename}: {e}")
             self.update_image_status(image_info, DownloadStatus.FAILED)
-            self.stats['failed'] += 1
+            with self.status_lock:
+                self.stats['failed'] = self.stats.get('failed', 0) + 1
             return False
     
     def _dedupe_images(self, images: List[ImageInfo]) -> List[ImageInfo]:
@@ -212,13 +216,9 @@ class EnhancedDownloadManager(DownloadManager):
         self.is_running = True
         
         # 重置统计
-        self.stats.update({
-            'total': len(images),
-            'success': 0,
-            'failed': 0,
-            'skipped': 0,
-            'bytes_downloaded': 0
-        })
+        with self.status_lock:
+            self.stats = self._create_empty_stats()
+            self.stats['total'] = len(images)
         
         # 初始化所有图片状态
         for image in images:

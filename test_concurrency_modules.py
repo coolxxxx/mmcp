@@ -6,7 +6,14 @@ import asyncio
 import sys
 import os
 import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 # 添加项目路径
 sys.path.insert(0, str(Path(__file__).parent))
@@ -186,29 +193,45 @@ async def test_concurrent_downloader():
     
     try:
         from src.core.concurrency import ConcurrentDownloader
-        
-        # 创建测试用的简单HTTP服务器URL（使用公共测试URL）
-        test_url = "https://httpbin.org/json"
+
+        class TestJsonHandler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                body = b'{"status":"ok"}'
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, format, *args):
+                pass
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), TestJsonHandler)
+        server_thread = __import__("threading").Thread(target=server.serve_forever, daemon=True)
+        server_thread.start()
+
+        test_url = f"http://127.0.0.1:{server.server_port}/json"
         test_file = "test_download.json"
         
-        async with ConcurrentDownloader(max_concurrent=2) as downloader:
-            # 测试单个下载
-            task_id = await downloader.download(test_url, test_file)
-            await downloader.wait_for_completion([task_id])
-            
-            # 检查下载状态
-            task_status = downloader.get_task_status(task_id)
-            if task_status and task_status.status.value == 'completed':
-                print("✅ 并发下载器测试成功")
+        try:
+            async with ConcurrentDownloader(max_concurrent=2) as downloader:
+                # 测试单个下载
+                task_id = await downloader.download(test_url, test_file)
+                await downloader.wait_for_completion([task_id])
                 
-                # 清理测试文件
-                if os.path.exists(test_file):
-                    os.remove(test_file)
-                
-                return True
-            else:
-                print(f"❌ 下载未完成，状态: {task_status.status.value if task_status else 'None'}")
-                return False
+                # 检查下载状态
+                task_status = downloader.get_task_status(task_id)
+                if task_status and task_status.status.value == 'completed':
+                    print("✅ 并发下载器测试成功")
+                    return True
+                else:
+                    print(f"❌ 下载未完成，状态: {task_status.status.value if task_status else 'None'}")
+                    return False
+        finally:
+            server.shutdown()
+            server.server_close()
+            if os.path.exists(test_file):
+                os.remove(test_file)
         
     except Exception as e:
         print(f"❌ 并发下载器测试失败: {e}")

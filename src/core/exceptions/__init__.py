@@ -15,9 +15,11 @@ try:
         ParsingError,
         AuthenticationError,
         PermissionError as AppPermissionError,
+        TimeoutError,
         TimeoutError as AppTimeoutError,
         ConcurrencyError,
         DataIntegrityError,
+        SecurityError,
         create_exception
     )
     _base_exceptions_available = True
@@ -88,6 +90,7 @@ if _base_exceptions_available:
         'ParsingError',
         'AuthenticationError',
         'AppPermissionError',
+        'TimeoutError',
         'AppTimeoutError',
         'ConcurrencyError',
         'DataIntegrityError',

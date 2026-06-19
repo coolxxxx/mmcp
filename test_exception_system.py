@@ -7,6 +7,12 @@ import time
 import asyncio
 from pathlib import Path
 
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 # 添加项目路径
 sys.path.insert(0, str(Path(__file__).parent))
 

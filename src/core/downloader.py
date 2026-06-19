@@ -46,15 +46,7 @@ class DownloadManager:
         
         # 初始化状态变量
         self.is_running: bool = False
-        self.stats: Dict[str, Any] = {
-            'total': 0,
-            'success': 0,
-            'failed': 0,
-            'skipped': 0,
-            'retry': 0,  # 新增：重试次数统计
-            'bytes_downloaded': 0,
-            'server_errors': 0  # 新增：服务器错误统计（包括502）
-        }
+        self.stats: Dict[str, Any] = self._create_empty_stats()
         self.download_queue: Queue[ImageInfo] = Queue()
         self.active_downloads: Dict[str, Any] = {}
         self.progress_callbacks: List[Callable[[ImageInfo, int, int], None]] = []
@@ -96,6 +88,18 @@ class DownloadManager:
         
         self.logger.info(f"下载管理器初始化完成，最大线程数: {self.max_threads}")
 
+    def _create_empty_stats(self) -> Dict[str, Any]:
+        """创建完整的下载统计结构，避免不同入口初始化出不一致字段。"""
+        return {
+            'total': 0,
+            'success': 0,
+            'failed': 0,
+            'skipped': 0,
+            'retry': 0,
+            'bytes_downloaded': 0,
+            'server_errors': 0
+        }
+
     def add_progress_callback(self, callback: Callable[[ImageInfo, int, int], None]) -> None:
         """添加进度回调函数"""
         self.progress_callbacks.append(callback)
@@ -108,7 +112,7 @@ class DownloadManager:
                 return
                 
             self.is_running = True
-            self.stats = {'total': 0, 'success': 0, 'failed': 0, 'skipped': 0, 'bytes_downloaded': 0}
+            self.stats = self._create_empty_stats()
             
             # 创建线程池执行器
             try:
@@ -338,7 +342,7 @@ class DownloadManager:
                     if status_code >= 500:
                         is_server_error = True
                         with self.status_lock:
-                            self.stats['server_errors'] += 1
+                            self.stats['server_errors'] = self.stats.get('server_errors', 0) + 1
                         self.logger.warning(f"服务器错误 {status_code} {image_info.url} (尝试 {attempt + 1}/{self.retry_times})")
                 
                 if is_server_error:
@@ -352,7 +356,7 @@ class DownloadManager:
                 if attempt < self.retry_times - 1:
                     time.sleep(delay)
                     with self.status_lock:
-                        self.stats['retry'] += 1
+                        self.stats['retry'] = self.stats.get('retry', 0) + 1
             except Exception as e:
                 self.logger.error(f"下载过程中发生错误 {image_info.url}: {e}")
                 break
@@ -475,7 +479,18 @@ class DownloadManager:
         Returns:
             是否正在下载
         """
-        return self.is_running and not self.download_queue.empty()
+        if not self.is_running:
+            return False
+
+        with self.status_lock:
+            total = self.stats.get('total', 0)
+            processed = (
+                self.stats.get('success', 0)
+                + self.stats.get('failed', 0)
+                + self.stats.get('skipped', 0)
+            )
+
+        return not self.download_queue.empty() or processed < total
 
     def get_download_stats(self) -> Dict[str, Any]:
         """

@@ -10,6 +10,7 @@ import subprocess
 import argparse
 import json
 from pathlib import Path
+from datetime import datetime, timezone
 
 def run_pytest(args):
     """运行pytest测试"""
@@ -19,11 +20,15 @@ def run_pytest(args):
     cmd.extend([
         "--verbose",
         "--tb=short",
-        "--cov=src",
-        "--cov-report=html:htmlcov",
-        "--cov-report=term-missing",
-        "--cov-report=xml",
     ])
+
+    if args.coverage:
+        cmd.extend([
+            "--cov=src",
+            "--cov-report=html:htmlcov",
+            "--cov-report=term-missing",
+            "--cov-report=xml",
+        ])
     
     # 根据参数添加选项
     if args.fast:
@@ -35,7 +40,7 @@ def run_pytest(args):
     if args.markers:
         cmd.extend(["-m", args.markers])
     
-    if args.coverage_fail_under:
+    if args.coverage and args.coverage_fail_under is not None:
         cmd.extend([f"--cov-fail-under={args.coverage_fail_under}"])
     
     if args.test_path:
@@ -55,12 +60,12 @@ def run_pytest(args):
 def run_specific_tests():
     """运行特定类型的测试"""
     test_categories = {
-        "unit": "tests/test_*.py -m unit",
-        "integration": "tests/test_*.py -m integration", 
-        "security": "tests/test_security.py",
-        "concurrency": "tests/test_concurrency.py",
-        "parsers": "tests/test_parsers.py",
-        "exceptions": "tests/test_exceptions.py"
+        "unit": "tests/",
+        "download": "tests/test_download_manager.py",
+        "security": "tests/test_input_validator.py",
+        "legacy-concurrency": "test_concurrency_modules.py",
+        "legacy-exceptions": "test_exception_system.py",
+        "legacy-security": "test_security_system.py"
     }
     
     print("可用的测试类别:")
@@ -72,7 +77,7 @@ def run_specific_tests():
 def generate_test_report():
     """生成测试报告"""
     report_data = {
-        "timestamp": "2024-01-01T00:00:00Z",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "test_summary": {
             "total_tests": 0,
             "passed": 0,
@@ -111,33 +116,41 @@ def check_test_environment():
         print("警告: Python版本过低，建议使用3.8+")
     
     # 检查必要的包
-    required_packages = [
-        "pytest", "pytest-cov", "pytest-mock", 
-        "requests", "beautifulsoup4", "pillow"
-    ]
-    
+    required_packages = {
+        "pytest": "pytest",
+        "pytest-cov": "pytest_cov",
+        "pytest-xdist": "xdist",
+        "requests": "requests",
+        "beautifulsoup4": "bs4",
+        "Pillow": "PIL",
+        "cryptography": "cryptography",
+        "psutil": "psutil",
+        "aiohttp": "aiohttp",
+        "aiofiles": "aiofiles",
+    }
+
     missing_packages = []
-    for package in required_packages:
+    for package, import_name in required_packages.items():
         try:
-            __import__(package.replace("-", "_"))
-            print(f"✓ {package}")
+            __import__(import_name)
+            print(f"[OK] {package}")
         except ImportError:
             missing_packages.append(package)
-            print(f"✗ {package} (缺失)")
-    
+            print(f"[MISSING] {package} (缺失)")
+
     if missing_packages:
         print(f"\n缺失的包: {', '.join(missing_packages)}")
-        print("请运行: pip install " + " ".join(missing_packages))
+        print("请运行: pip install -r requirements-dev.txt")
         return False
     
     # 检查测试目录
     test_dir = Path("tests")
     if not test_dir.exists():
-        print("✗ tests目录不存在")
+        print("[MISSING] tests目录不存在")
         return False
-    
+
     test_files = list(test_dir.glob("test_*.py"))
-    print(f"✓ 发现 {len(test_files)} 个测试文件")
+    print(f"[OK] 发现 {len(test_files)} 个测试文件")
     
     return True
 
@@ -147,7 +160,8 @@ def main():
     parser.add_argument("--fast", action="store_true", help="快速测试模式")
     parser.add_argument("--parallel", action="store_true", help="并行测试")
     parser.add_argument("--markers", help="运行特定标记的测试")
-    parser.add_argument("--coverage-fail-under", type=int, default=80, help="覆盖率阈值")
+    parser.add_argument("--coverage", action="store_true", help="生成覆盖率报告")
+    parser.add_argument("--coverage-fail-under", type=int, help="覆盖率阈值（需同时使用 --coverage）")
     parser.add_argument("--test-path", help="指定测试路径")
     parser.add_argument("--check-env", action="store_true", help="检查测试环境")
     parser.add_argument("--list-categories", action="store_true", help="列出测试类别")

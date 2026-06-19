@@ -13,6 +13,7 @@ import time
 import logging
 
 from ..models.data_models import DownloadTask, ImageInfo, DownloadStatus
+from .theme import center_window, style_button, style_window
 
 
 class RealTimeProgressWindow:
@@ -41,14 +42,14 @@ class RealTimeProgressWindow:
         # 创建窗口
         self.window = tk.Toplevel(parent)
         self.window.title(f"实时下载进度 - {task.name}")
-        self.window.geometry("900x700")
         self.window.transient(parent)
+        style_window(self.window)
         
         # 窗口关闭事件
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
         
         # 居中显示
-        self.center_window()
+        center_window(self.window, parent, width=900, height=700)
         
         self._create_widgets()
         self._start_real_time_update()
@@ -62,7 +63,7 @@ class RealTimeProgressWindow:
     
     def _create_widgets(self):
         """创建界面控件"""
-        main_frame = ttk.Frame(self.window, padding=10)
+        main_frame = ttk.Frame(self.window, padding=16, style="App.TFrame")
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # 任务信息区域
@@ -82,11 +83,11 @@ class RealTimeProgressWindow:
     
     def _create_task_info_section(self, parent):
         """创建任务信息区域"""
-        info_frame = ttk.LabelFrame(parent, text="任务信息", padding=10)
+        info_frame = ttk.LabelFrame(parent, text="任务信息", padding=12, style="App.TLabelframe")
         info_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 任务基本信息
-        info_grid = ttk.Frame(info_frame)
+        info_grid = ttk.Frame(info_frame, style="Surface.TFrame")
         info_grid.pack(fill=tk.X)
         
         ttk.Label(info_grid, text="任务名称:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
@@ -100,7 +101,7 @@ class RealTimeProgressWindow:
     
     def _create_stats_section(self, parent):
         """创建实时统计区域"""
-        stats_frame = ttk.LabelFrame(parent, text="实时统计", padding=10)
+        stats_frame = ttk.LabelFrame(parent, text="实时统计", padding=12, style="App.TLabelframe")
         stats_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 创建统计变量
@@ -114,7 +115,7 @@ class RealTimeProgressWindow:
         }
         
         # 布局统计信息
-        stats_grid = ttk.Frame(stats_frame)
+        stats_grid = ttk.Frame(stats_frame, style="Surface.TFrame")
         stats_grid.pack(fill=tk.X)
         
         # 第一行
@@ -129,7 +130,7 @@ class RealTimeProgressWindow:
     
     def _create_progress_section(self, parent):
         """创建总体进度区域"""
-        progress_frame = ttk.LabelFrame(parent, text="总体进度", padding=10)
+        progress_frame = ttk.LabelFrame(parent, text="总体进度", padding=12, style="App.TLabelframe")
         progress_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 进度条
@@ -138,7 +139,8 @@ class RealTimeProgressWindow:
             progress_frame,
             variable=self.overall_progress_var,
             length=500,
-            mode='determinate'
+            mode='determinate',
+            style="App.Horizontal.TProgressbar"
         )
         self.overall_progress.pack(fill=tk.X, pady=5)
         
@@ -154,12 +156,12 @@ class RealTimeProgressWindow:
     
     def _create_detail_section(self, parent):
         """创建详细列表区域"""
-        detail_frame = ttk.LabelFrame(parent, text="下载详情 (实时更新)", padding=10)
+        detail_frame = ttk.LabelFrame(parent, text="下载详情 (实时更新)", padding=12, style="App.TLabelframe")
         detail_frame.pack(fill=tk.BOTH, expand=True)
         
         # 创建Treeview
         columns = ('filename', 'status', 'progress', 'size', 'speed', 'time')
-        self.detail_tree = ttk.Treeview(detail_frame, columns=columns, show='headings', height=15)
+        self.detail_tree = ttk.Treeview(detail_frame, columns=columns, show='headings', height=15, style="App.Treeview")
         
         # 设置列标题和宽度
         column_configs = {
@@ -190,12 +192,12 @@ class RealTimeProgressWindow:
     
     def _create_button_section(self, parent):
         """创建控制按钮区域"""
-        button_frame = ttk.Frame(parent)
+        button_frame = ttk.Frame(parent, style="App.TFrame")
         button_frame.pack(fill=tk.X, pady=(10, 0))
         
         # 右侧按钮
-        ttk.Button(button_frame, text="关闭", command=self.close).pack(side=tk.RIGHT)
-        ttk.Button(button_frame, text="手动刷新", command=self.manual_refresh).pack(side=tk.RIGHT, padx=(0, 10))
+        style_button(ttk.Button(button_frame, text="关闭", command=self.close), "ghost").pack(side=tk.RIGHT)
+        style_button(ttk.Button(button_frame, text="手动刷新", command=self.manual_refresh), "secondary").pack(side=tk.RIGHT, padx=(0, 10))
         
         # 左侧状态
         self.update_status_var = tk.StringVar(value="实时更新: 启用")

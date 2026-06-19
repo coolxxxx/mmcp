@@ -7,6 +7,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from typing import Dict
+from .theme import center_window, style_button, style_window
 
 class SettingsDialog:
     """设置对话框"""
@@ -26,16 +27,11 @@ class SettingsDialog:
         # 创建对话框窗口
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("设置")
-        self.dialog.geometry("700x600")  # 调整尺寸
         self.dialog.resizable(True, True)  # 允许调整大小
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
-        # 居中显示
-        self.dialog.geometry("+%d+%d" % (
-            parent.winfo_rootx() + 100,
-            parent.winfo_rooty() + 50
-        ))
+        style_window(self.dialog, config)
+        center_window(self.dialog, parent, width=700, height=640)
         
         self._create_widgets()
         self._load_settings()
@@ -43,13 +39,13 @@ class SettingsDialog:
     def _create_widgets(self):
         """创建界面控件"""
         # 主容器
-        main_container = ttk.Frame(self.dialog)
+        main_container = ttk.Frame(self.dialog, style="App.TFrame")
         main_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # 创建滚动区域
-        canvas = tk.Canvas(main_container)
+        canvas = tk.Canvas(main_container, highlightthickness=0, background="#F5F7FB")
         scrollbar = ttk.Scrollbar(main_container, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
+        scrollable_frame = ttk.Frame(canvas, style="App.TFrame")
         
         scrollable_frame.bind(
             "<Configure>",
@@ -74,8 +70,29 @@ class SettingsDialog:
         # 在滚动区域中创建内容
         content_frame = scrollable_frame
         
+        # 界面设置
+        interface_frame = ttk.LabelFrame(content_frame, text="界面设置", padding=12, style="App.TLabelframe")
+        interface_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(interface_frame, text="界面主题:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.theme_var = tk.StringVar()
+        self.theme_combo = ttk.Combobox(
+            interface_frame,
+            textvariable=self.theme_var,
+            values=["现代清爽", "系统默认"],
+            state="readonly",
+            width=18,
+        )
+        self.theme_combo.grid(row=0, column=1, sticky=tk.W, padx=(10, 0), pady=5)
+        ttk.Label(
+            interface_frame,
+            text="切换后重启程序可获得最完整的窗口样式。",
+            style="SurfaceMuted.TLabel",
+        ).grid(row=1, column=1, sticky=tk.W, padx=(10, 0), pady=(0, 5))
+        interface_frame.columnconfigure(1, weight=1)
+
         # 下载设置
-        download_frame = ttk.LabelFrame(content_frame, text="下载设置", padding=10)
+        download_frame = ttk.LabelFrame(content_frame, text="下载设置", padding=12, style="App.TLabelframe")
         download_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 默认下载路径
@@ -84,7 +101,7 @@ class SettingsDialog:
         ttk.Entry(download_frame, textvariable=self.download_path_var, width=40).grid(
             row=0, column=1, sticky=tk.EW, padx=(10, 0), pady=5
         )
-        ttk.Button(download_frame, text="浏览", command=self.browse_download_path).grid(
+        style_button(ttk.Button(download_frame, text="浏览", command=self.browse_download_path), "secondary").grid(
             row=0, column=2, padx=(5, 0), pady=5
         )
         
@@ -112,12 +129,12 @@ class SettingsDialog:
         download_frame.columnconfigure(1, weight=1)
         
         # 图片过滤设置
-        filter_frame = ttk.LabelFrame(content_frame, text="图片过滤", padding=10)
+        filter_frame = ttk.LabelFrame(content_frame, text="图片过滤", padding=12, style="App.TLabelframe")
         filter_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 允许的图片类型
         ttk.Label(filter_frame, text="允许的图片类型:").grid(row=0, column=0, sticky=tk.NW, pady=5)
-        types_frame = ttk.Frame(filter_frame)
+        types_frame = ttk.Frame(filter_frame, style="Surface.TFrame")
         types_frame.grid(row=0, column=1, sticky=tk.EW, padx=(10, 0), pady=5)
         
         self.image_types_vars = {}
@@ -159,7 +176,7 @@ class SettingsDialog:
         filter_frame.columnconfigure(1, weight=1)
         
         # 预过滤性能设置
-        performance_frame = ttk.LabelFrame(content_frame, text="预过滤性能设置", padding=10)
+        performance_frame = ttk.LabelFrame(content_frame, text="预过滤性能设置", padding=12, style="App.TLabelframe")
         performance_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 启用文件大小过滤
@@ -214,7 +231,7 @@ class SettingsDialog:
         ).grid(row=4, column=1, sticky=tk.W, padx=(10, 0), pady=5)
         
         # 性能提示
-        tips_frame = ttk.Frame(performance_frame)
+        tips_frame = ttk.Frame(performance_frame, style="Surface.TFrame")
         tips_frame.grid(row=5, column=0, columnspan=2, sticky=tk.EW, pady=(10, 0))
         
         tips_text = (
@@ -235,26 +252,28 @@ class SettingsDialog:
         performance_frame.columnconfigure(1, weight=1)
         
         # 按钮区域（在主容器中，不在滚动区域内）
-        button_frame = ttk.Frame(self.dialog)
+        button_frame = ttk.Frame(self.dialog, style="App.TFrame")
         button_frame.pack(fill=tk.X, side=tk.BOTTOM, padx=10, pady=(5, 10))
         
         # 按钮容器
-        buttons_container = ttk.Frame(button_frame)
+        buttons_container = ttk.Frame(button_frame, style="App.TFrame")
         buttons_container.pack(fill=tk.X)
         
         # 右侧按钮组（确定、取消）
-        right_buttons = ttk.Frame(buttons_container)
+        right_buttons = ttk.Frame(buttons_container, style="App.TFrame")
         right_buttons.pack(side=tk.RIGHT)
         
-        ttk.Button(right_buttons, text="确定", command=self.on_ok, width=8).pack(side=tk.LEFT, padx=(5, 0))
-        ttk.Button(right_buttons, text="取消", command=self.on_cancel, width=8).pack(side=tk.LEFT, padx=(5, 0))
+        style_button(ttk.Button(right_buttons, text="确定", command=self.on_ok, width=8), "primary").pack(side=tk.LEFT, padx=(5, 0))
+        style_button(ttk.Button(right_buttons, text="取消", command=self.on_cancel, width=8), "ghost").pack(side=tk.LEFT, padx=(5, 0))
         
         # 左侧按钮（恢复默认）
-        ttk.Button(buttons_container, text="恢复默认", command=self.on_reset_defaults, width=12).pack(side=tk.LEFT)
+        style_button(ttk.Button(buttons_container, text="恢复默认", command=self.on_reset_defaults, width=12), "secondary").pack(side=tk.LEFT)
     
     def _load_settings(self):
         """加载当前设置"""
         self.download_path_var.set(self.config.get('download_path', './downloads'))
+        theme = self.config.get('gui.theme', 'modern_light')
+        self.theme_var.set("系统默认" if theme == "system" else "现代清爽")
         self.max_threads_var.set(self.config.get('max_threads', 5))
         self.timeout_var.set(self.config.get('timeout', 30))
         self.retry_times_var.set(self.config.get('retry_times', 3))
@@ -300,6 +319,8 @@ class SettingsDialog:
         try:
             # 保存设置
             self.config.set('download_path', self.download_path_var.get())
+            theme_value = 'system' if self.theme_var.get() == "系统默认" else 'modern_light'
+            self.config.set('gui.theme', theme_value)
             self.config.set('max_threads', self.max_threads_var.get())
             self.config.set('timeout', self.timeout_var.get())
             self.config.set('retry_times', self.retry_times_var.get())
@@ -362,6 +383,7 @@ class SettingsDialog:
                 
                 # 设置为默认值
                 self.download_path_var.set(default_config.get('download_path', './downloads'))
+                self.theme_var.set("现代清爽")
                 self.max_threads_var.set(default_config.get('max_threads', 5))
                 self.timeout_var.set(default_config.get('timeout', 30))
                 self.retry_times_var.set(default_config.get('retry_times', 3))

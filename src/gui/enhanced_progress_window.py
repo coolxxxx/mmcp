@@ -11,6 +11,7 @@ import time
 
 from ..models.data_models import DownloadTask, ImageInfo, DownloadStatus
 from ..core.enhanced_downloader import EnhancedDownloadManager
+from .theme import MODERN_LIGHT, center_window, style_button, style_window
 
 
 class EnhancedProgressWindow:
@@ -47,14 +48,9 @@ class EnhancedProgressWindow:
         # 创建窗口
         self.window = tk.Toplevel(parent)
         self.window.title(f"下载进度 - {task.name}")
-        self.window.geometry("900x700")  # 增加窗口大小
         self.window.transient(parent)
-        
-        # 居中显示
-        self.window.geometry("+%d+%d" % (
-            parent.winfo_rootx() + 50,
-            parent.winfo_rooty() + 50
-        ))
+        style_window(self.window)
+        center_window(self.window, parent, width=900, height=700)
         
         # 设置窗口图标和属性
         self.window.resizable(True, True)
@@ -65,7 +61,7 @@ class EnhancedProgressWindow:
     
     def _create_widgets(self):
         """创建界面控件"""
-        main_frame = ttk.Frame(self.window, padding=10)
+        main_frame = ttk.Frame(self.window, padding=16, style="App.TFrame")
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # 任务信息区域
@@ -85,7 +81,7 @@ class EnhancedProgressWindow:
     
     def _create_task_info_section(self, parent):
         """创建任务信息区域"""
-        info_frame = ttk.LabelFrame(parent, text="任务信息", padding=10)
+        info_frame = ttk.LabelFrame(parent, text="任务信息", padding=12, style="App.TLabelframe")
         info_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 使用网格布局
@@ -107,7 +103,7 @@ class EnhancedProgressWindow:
     
     def _create_overall_progress_section(self, parent):
         """创建总体进度区域"""
-        progress_frame = ttk.LabelFrame(parent, text="总体进度", padding=10)
+        progress_frame = ttk.LabelFrame(parent, text="总体进度", padding=12, style="App.TLabelframe")
         progress_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 主进度条
@@ -116,7 +112,8 @@ class EnhancedProgressWindow:
             progress_frame,
             variable=self.overall_progress_var,
             length=500,
-            mode='determinate'
+            mode='determinate',
+            style="App.Horizontal.TProgressbar"
         )
         self.overall_progress.pack(fill=tk.X, pady=5)
         
@@ -125,7 +122,7 @@ class EnhancedProgressWindow:
         ttk.Label(progress_frame, textvariable=self.overall_text_var, font=('', 10)).pack(anchor=tk.W, pady=2)
         
         # 统计信息网格
-        stats_frame = ttk.Frame(progress_frame)
+        stats_frame = ttk.Frame(progress_frame, style="Surface.TFrame")
         stats_frame.pack(fill=tk.X, pady=5)
         
         self.stats_vars = {
@@ -153,10 +150,10 @@ class EnhancedProgressWindow:
     
     def _create_performance_section(self, parent):
         """创建性能监控区域"""
-        perf_frame = ttk.LabelFrame(parent, text="性能监控", padding=10)
+        perf_frame = ttk.LabelFrame(parent, text="性能监控", padding=12, style="App.TLabelframe")
         perf_frame.pack(fill=tk.X, pady=(0, 10))
         
-        perf_grid = ttk.Frame(perf_frame)
+        perf_grid = ttk.Frame(perf_frame, style="Surface.TFrame")
         perf_grid.pack(fill=tk.X)
         
         self.perf_vars = {
@@ -173,12 +170,12 @@ class EnhancedProgressWindow:
     
     def _create_detail_list_section(self, parent):
         """创建详细列表区域"""
-        detail_frame = ttk.LabelFrame(parent, text="下载详情", padding=10)
+        detail_frame = ttk.LabelFrame(parent, text="下载详情", padding=12, style="App.TLabelframe")
         detail_frame.pack(fill=tk.BOTH, expand=True)
         
         # 创建Treeview
         columns = ('filename', 'status', 'progress', 'size', 'speed', 'error')
-        self.detail_tree = ttk.Treeview(detail_frame, columns=columns, show='headings', height=15)
+        self.detail_tree = ttk.Treeview(detail_frame, columns=columns, show='headings', height=15, style="App.Treeview")
         
         # 设置列标题和宽度
         column_configs = {
@@ -208,25 +205,25 @@ class EnhancedProgressWindow:
         detail_frame.grid_columnconfigure(0, weight=1)
         
         # 状态颜色标记
-        self.detail_tree.tag_configure('waiting', background='#f0f0f0')
-        self.detail_tree.tag_configure('downloading', background='#e6f3ff')
-        self.detail_tree.tag_configure('completed', background='#e6ffe6')
-        self.detail_tree.tag_configure('failed', background='#ffe6e6')
+        self.detail_tree.tag_configure('waiting', background=MODERN_LIGHT["surface_alt"], foreground=MODERN_LIGHT["text_muted"])
+        self.detail_tree.tag_configure('downloading', background=MODERN_LIGHT["info_soft"], foreground=MODERN_LIGHT["info"])
+        self.detail_tree.tag_configure('completed', background=MODERN_LIGHT["success_soft"], foreground=MODERN_LIGHT["success"])
+        self.detail_tree.tag_configure('failed', background=MODERN_LIGHT["danger_soft"], foreground=MODERN_LIGHT["danger"])
     
     def _create_button_section(self, parent):
         """创建按钮区域"""
-        button_frame = ttk.Frame(parent)
+        button_frame = ttk.Frame(parent, style="App.TFrame")
         button_frame.pack(fill=tk.X, pady=(10, 0))
         
         # 右侧按钮
-        ttk.Button(button_frame, text="关闭", command=self.close).pack(side=tk.RIGHT)
-        ttk.Button(button_frame, text="刷新", command=self.manual_refresh).pack(side=tk.RIGHT, padx=(0, 10))
-        ttk.Button(button_frame, text="导出日志", command=self.export_log).pack(side=tk.RIGHT, padx=(0, 10))
+        style_button(ttk.Button(button_frame, text="关闭", command=self.close), "ghost").pack(side=tk.RIGHT)
+        style_button(ttk.Button(button_frame, text="刷新", command=self.manual_refresh), "secondary").pack(side=tk.RIGHT, padx=(0, 10))
+        style_button(ttk.Button(button_frame, text="导出日志", command=self.export_log), "secondary").pack(side=tk.RIGHT, padx=(0, 10))
         
         # 左侧控制按钮
         self.pause_resume_var = tk.StringVar(value="暂停")
-        ttk.Button(button_frame, textvariable=self.pause_resume_var, command=self.toggle_pause).pack(side=tk.LEFT)
-        ttk.Button(button_frame, text="取消下载", command=self.cancel_download).pack(side=tk.LEFT, padx=(10, 0))
+        style_button(ttk.Button(button_frame, textvariable=self.pause_resume_var, command=self.toggle_pause), "secondary").pack(side=tk.LEFT)
+        style_button(ttk.Button(button_frame, text="取消下载", command=self.cancel_download), "danger").pack(side=tk.LEFT, padx=(10, 0))
     
     def _setup_callbacks(self):
         """设置回调函数"""

@@ -13,6 +13,7 @@ import logging
 from typing import Optional, Union
 import queue
 from typing import List, Dict, Any  # 向后兼容
+from .theme import center_window, style_button, style_window
 
 class ImagePreviewWindow:
     """增强的图片预览窗口类，支持网格和单图两种模式"""
@@ -90,14 +91,14 @@ class ImagePreviewWindow:
         self.window = tk.Toplevel(self.parent)
         self.window.title(f"图片预览 - 共 {len(self.image_paths)} 张")
         
-        # 初始窗口大小（将在加载图片后调整）
-        self.window.geometry("900x700")
+        style_window(self.window)
+        center_window(self.window, self.parent, width=900, height=700)
         
         # 设置最小窗口大小
         self.window.minsize(self.min_window_width, self.min_window_height)
         
         # 创建主框架
-        main_frame = ttk.Frame(self.window)
+        main_frame = ttk.Frame(self.window, style="App.TFrame")
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # 工具栏
@@ -118,39 +119,39 @@ class ImagePreviewWindow:
     
     def _create_toolbar(self, parent):
         """创建工具栏"""
-        toolbar = ttk.Frame(parent)
+        toolbar = ttk.Frame(parent, style="Toolbar.TFrame")
         toolbar.pack(fill=tk.X, pady=(0, 10))
         
         # 导航按钮
-        ttk.Button(toolbar, text="上一张 (←)", command=self.previous_image).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(toolbar, text="下一张 (→)", command=self.next_image).pack(side=tk.LEFT, padx=(0, 5))
+        style_button(ttk.Button(toolbar, text="上一张 (←)", command=self.previous_image), "secondary").pack(side=tk.LEFT, padx=(0, 5))
+        style_button(ttk.Button(toolbar, text="下一张 (→)", command=self.next_image), "secondary").pack(side=tk.LEFT, padx=(0, 5))
         
         # 分隔符
         ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
         
         # 操作按钮
-        ttk.Button(toolbar, text="删除图片 (Del)", command=self.delete_current_image).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(toolbar, text="打开文件夹", command=self.open_image_folder).pack(side=tk.LEFT, padx=(0, 5))
+        style_button(ttk.Button(toolbar, text="删除图片 (Del)", command=self.delete_current_image), "danger").pack(side=tk.LEFT, padx=(0, 5))
+        style_button(ttk.Button(toolbar, text="打开文件夹", command=self.open_image_folder), "secondary").pack(side=tk.LEFT, padx=(0, 5))
         
         # 关闭按钮（右对齐）
-        ttk.Button(toolbar, text="关闭 (Esc)", command=self.close_window).pack(side=tk.RIGHT)
+        style_button(ttk.Button(toolbar, text="关闭 (Esc)", command=self.close_window), "ghost").pack(side=tk.RIGHT)
     
     def _create_image_area(self, parent):
         """创建图片显示区域"""
         # 创建框架
-        image_frame = ttk.LabelFrame(parent, text="图片预览", padding=10)
+        image_frame = ttk.LabelFrame(parent, text="图片预览", padding=12, style="App.TLabelframe")
         image_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
         
         # 创建画布和滚动区域
         self.canvas = tk.Canvas(
             image_frame, 
-            bg='white',
+            bg='#F8FAFC',
             highlightthickness=1,
-            highlightbackground='gray'
+            highlightbackground='#D8E0EA'
         )
         
         # 创建可滚动的内部框架
-        self.scrollable_frame = ttk.Frame(self.canvas)
+        self.scrollable_frame = ttk.Frame(self.canvas, style="Surface.TFrame")
         self.scrollable_frame.bind(
             "<Configure>",
             lambda e: self._configure_canvas_scroll()
@@ -184,19 +185,19 @@ class ImagePreviewWindow:
     
     def _create_status_bar(self, parent):
         """创建状态栏"""
-        status_frame = ttk.Frame(parent)
+        status_frame = ttk.Frame(parent, style="Status.TFrame", padding=(8, 6))
         status_frame.pack(fill=tk.X)
         
         # 信息显示
         self.info_var = tk.StringVar()
-        ttk.Label(status_frame, textvariable=self.info_var).pack(side=tk.LEFT)
+        ttk.Label(status_frame, textvariable=self.info_var, style="StatusMuted.TLabel").pack(side=tk.LEFT)
         
         # 进度显示
-        progress_frame = ttk.Frame(status_frame)
+        progress_frame = ttk.Frame(status_frame, style="Status.TFrame")
         progress_frame.pack(side=tk.RIGHT)
         
         self.progress_var = tk.StringVar()
-        ttk.Label(progress_frame, textvariable=self.progress_var).pack(side=tk.LEFT)
+        ttk.Label(progress_frame, textvariable=self.progress_var, style="StatusMuted.TLabel").pack(side=tk.LEFT)
     
     def _load_grid_view(self):
         """加载网格视图"""

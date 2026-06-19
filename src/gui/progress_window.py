@@ -11,6 +11,7 @@ import threading
 import time
 
 from ..models.data_models import DownloadTask, ImageInfo, DownloadStatus
+from .theme import center_window, style_button, style_window
 
 class ProgressWindow:
     """下载进度窗口"""
@@ -31,25 +32,20 @@ class ProgressWindow:
         # 创建窗口
         self.window = tk.Toplevel(parent)
         self.window.title(f"下载进度 - {task.name}")
-        self.window.geometry("800x600")
         self.window.transient(parent)
-        
-        # 居中显示
-        self.window.geometry("+%d+%d" % (
-            parent.winfo_rootx() + 100,
-            parent.winfo_rooty() + 100
-        ))
+        style_window(self.window)
+        center_window(self.window, parent, width=800, height=600)
         
         self._create_widgets()
         self._update_progress()
     
     def _create_widgets(self):
         """创建界面控件"""
-        main_frame = ttk.Frame(self.window, padding=10)
+        main_frame = ttk.Frame(self.window, padding=16, style="App.TFrame")
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # 任务信息
-        info_frame = ttk.LabelFrame(main_frame, text="任务信息", padding=10)
+        info_frame = ttk.LabelFrame(main_frame, text="任务信息", padding=12, style="App.TLabelframe")
         info_frame.pack(fill=tk.X, pady=(0, 10))
         
         ttk.Label(info_frame, text=f"任务名称: {self.task.name}").pack(anchor=tk.W)
@@ -57,7 +53,7 @@ class ProgressWindow:
         ttk.Label(info_frame, text=f"下载路径: {self.task.download_path}").pack(anchor=tk.W)
         
         # 总体进度
-        progress_frame = ttk.LabelFrame(main_frame, text="总体进度", padding=10)
+        progress_frame = ttk.LabelFrame(main_frame, text="总体进度", padding=12, style="App.TLabelframe")
         progress_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 进度条
@@ -65,7 +61,8 @@ class ProgressWindow:
         self.overall_progress = ttk.Progressbar(
             progress_frame,
             variable=self.overall_progress_var,
-            length=400
+            length=400,
+            style="App.Horizontal.TProgressbar"
         )
         self.overall_progress.pack(fill=tk.X, pady=5)
         
@@ -74,7 +71,7 @@ class ProgressWindow:
         ttk.Label(progress_frame, textvariable=self.overall_text_var).pack(anchor=tk.W)
         
         # 统计信息
-        stats_frame = ttk.Frame(progress_frame)
+        stats_frame = ttk.Frame(progress_frame, style="Surface.TFrame")
         stats_frame.pack(fill=tk.X, pady=5)
         
         self.stats_vars = {
@@ -90,12 +87,12 @@ class ProgressWindow:
             )
         
         # 详细列表
-        detail_frame = ttk.LabelFrame(main_frame, text="下载详情", padding=10)
+        detail_frame = ttk.LabelFrame(main_frame, text="下载详情", padding=12, style="App.TLabelframe")
         detail_frame.pack(fill=tk.BOTH, expand=True)
         
         # 创建Treeview
         columns = ('filename', 'status', 'progress', 'size', 'speed')
-        self.detail_tree = ttk.Treeview(detail_frame, columns=columns, show='headings')
+        self.detail_tree = ttk.Treeview(detail_frame, columns=columns, show='headings', style="App.Treeview")
         
         # 设置列标题
         self.detail_tree.heading('filename', text='文件名')
@@ -124,11 +121,11 @@ class ProgressWindow:
         detail_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         
         # 按钮区域
-        button_frame = ttk.Frame(main_frame)
+        button_frame = ttk.Frame(main_frame, style="App.TFrame")
         button_frame.pack(fill=tk.X, pady=(10, 0))
         
-        ttk.Button(button_frame, text="关闭", command=self.close).pack(side=tk.RIGHT)
-        ttk.Button(button_frame, text="刷新", command=self.refresh).pack(side=tk.RIGHT, padx=(0, 10))
+        style_button(ttk.Button(button_frame, text="关闭", command=self.close), "ghost").pack(side=tk.RIGHT)
+        style_button(ttk.Button(button_frame, text="刷新", command=self.refresh), "secondary").pack(side=tk.RIGHT, padx=(0, 10))
     
     def _update_progress(self):
         """更新进度显示"""

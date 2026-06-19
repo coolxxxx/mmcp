@@ -110,6 +110,8 @@ class AsyncExecutor:
         Returns:
             asyncio.Task对象
         """
+        self._ensure_loop()
+
         task_obj = AsyncTask(
             coro=coro,
             priority=priority,

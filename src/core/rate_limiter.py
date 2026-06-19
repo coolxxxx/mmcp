@@ -149,13 +149,18 @@ class RateLimiter:
         """获取当前状态"""
         with self.lock:
             self._refill_tokens()
+            wait_time_for_one = 0.0
+            if self.config.enabled and self.tokens < 1:
+                safe_rate = max(self.config.max_requests_per_second, 0.000001)
+                wait_time_for_one = (1 - self.tokens) / safe_rate
+
             return {
                 'enabled': self.config.enabled,
                 'max_requests_per_second': self.config.max_requests_per_second,
                 'burst_capacity': self.config.burst_capacity,
                 'current_tokens': self.tokens,
                 'available_tokens': self.tokens,
-                'wait_time_for_one': self.get_wait_time(1)
+                'wait_time_for_one': wait_time_for_one
             }
 
 

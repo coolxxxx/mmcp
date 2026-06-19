@@ -5,6 +5,7 @@
 
 import re
 import os
+import ipaddress
 import urllib.parse
 from typing import Dict, List, Any, Optional, Union, Callable, Pattern
 from pathlib import Path
@@ -75,7 +76,7 @@ class InputValidator:
                 ValidationRule(
                     name="domain_check",
                     validator=self._is_safe_domain,
-                    error_message="域名不在允许列表中",
+                    error_message="域名不是可访问的公共域名",
                     level=ValidationLevel.STRICT
                 ),
                 ValidationRule(
@@ -271,26 +272,25 @@ class InputValidator:
         """检查域名是否安全"""
         try:
             parsed = urllib.parse.urlparse(url)
-            domain = parsed.netloc.lower()
-            
-            # 允许的域名模式
-            safe_patterns = [
-                r'.*\.xiuren\..*',
-                r'.*\.tuigirl\..*',
-                r'.*\.legbaby\..*',
-                r'.*\.huayang\..*',
-                r'.*\.youwu\..*',
-                r'.*\.missleg\..*',
-                r'.*\.mistar\..*',
-                r'.*\.aiyouwu\..*',
-                # 常见的图片托管服务
-                r'.*\.imgur\.com',
-                r'.*\.flickr\.com',
-                r'.*\.photobucket\.com'
-            ]
-            
-            return any(re.match(pattern, domain) for pattern in safe_patterns)
-            
+            hostname = parsed.hostname
+            if not hostname:
+                return False
+
+            domain = hostname.strip().lower().rstrip('.')
+
+            if not domain or any(char.isspace() for char in domain):
+                return False
+
+            if domain == 'localhost' or domain.endswith('.localhost') or domain.endswith('.local'):
+                return False
+
+            try:
+                ip_address = ipaddress.ip_address(domain)
+                return ip_address.is_global
+            except ValueError:
+                # 普通域名：要求至少包含一个点，避免误放内网短主机名。
+                return '.' in domain
+
         except Exception:
             return False
     
@@ -356,13 +356,15 @@ class InputValidator:
     def _has_valid_path_chars(self, path: str) -> bool:
         """检查路径字符是否有效"""
         # Windows无效字符
-        invalid_chars = ['<', '>', ':', '"', '|', '?', '*']
+        invalid_chars = ['<', '>', '"', '|', '?', '*']
         
         # 控制字符 (0-31)
-        for char in path:
+        for index, char in enumerate(path):
             if ord(char) < 32:
                 return False
             if char in invalid_chars:
+                return False
+            if char == ':' and not (index == 1 and path[0].isalpha()):
                 return False
         
         return True
